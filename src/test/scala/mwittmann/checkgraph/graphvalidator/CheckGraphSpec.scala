@@ -4,6 +4,7 @@ import java.util.UUID
 import scala.util.Random
 
 import cats.free.Free
+import mwittmann.checkgraph.graphvalidator.CheckGraph.ProgramResult
 import mwittmann.checkgraph.graphvalidator.N4jUid
 import mwittmann.checkgraph.graphvalidator.DslCommands.{DslCommand, DslState, DslStateData, MatchedPath, matchEdge, matchVertex}
 import org.specs2.mutable.Specification
@@ -45,14 +46,19 @@ class CheckGraphSpec extends Specification {
         } yield (a, b)
 
       // Run test program, check result
-      val result = CheckGraph.check(graphLabel, program)
-      println(result)
-      val resultValue: (DslStateData, (MatchedPath, MatchedPath)) = result.right.get.right.get
-
+      val result: ProgramResult[(MatchedPath, MatchedPath)] = CheckGraph.check(graphLabel, program)
+      val resultValue = getValue(result)
       val (MatchedPath(path1), MatchedPath(path2)) = resultValue._2
 
       path1.map(_.uid) mustEqual List(aUid, bUid)
       path2.map(_.uid) mustEqual List(bUid, cUid)
     }
+  }
+
+  def getValue[S](result: ProgramResult[S]): (DslStateData, S) = {
+    result must beRight
+    val r1 = result.right.get
+    r1 must beRight
+    r1.right.get
   }
 }

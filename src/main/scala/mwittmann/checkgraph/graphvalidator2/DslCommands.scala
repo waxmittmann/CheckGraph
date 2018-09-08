@@ -39,6 +39,9 @@ object DslCommands {
 //    seenEdges: Set[(Long, Long)] = Set.empty
     seenEdges: Set[Long] = Set.empty
   ) { `this` =>
+    def seeEdges(seenEdgeIds: Set[Long]): DslStateData = this.copy(seenEdges = seenEdges ++ seenEdgeIds)
+    def seeVertices(seenVertexIds: Set[Long]): DslStateData = this.copy(seenVertices = seenVertices ++ seenVertexIds)
+
     def seenVertex(newSeen: Long): DslStateData = `this`.copy(seenVertices = seenVertices + newSeen)
     def seenEdge(edgeId: Long): DslStateData = `this`.copy(seenEdges = seenEdges + edgeId)
   }

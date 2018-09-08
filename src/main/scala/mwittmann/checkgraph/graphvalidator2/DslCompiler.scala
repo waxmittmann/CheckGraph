@@ -60,21 +60,26 @@ object DslCompiler {
 
       val result = s.graph.tx(q).list()
 
-      if(result.size() == 0)
-        fail(DslError(s"Query $q returned no results.", s))
-      else if (result.size() == 1) {
-        val vertex = result.get(0)
-        success(
-          s,
-          MatchedVertex(
-            vertex.get("nid").asLong(),
-            UUID.fromString(vertex.get("n").get("uid").asString()),
-            labels,
-            attributes
+      try {
+        if (result.size() == 0)
+          fail(DslError(s"Query $q returned no results.", s))
+        else if (result.size() == 1) {
+          val vertex = result.get(0)
+          val vertexId = vertex.get("nid").asLong()
+          success(
+            s.seeVertices(Set(vertexId)),
+            MatchedVertex(
+              vertexId,
+              UUID.fromString(vertex.get("n").get("uid").asString()),
+              labels,
+              attributes
+            )
           )
-        )
-      } else
-        fail(DslError(s"Query $q returned more than one result.", s))
+        } else
+          fail(DslError(s"Query $q returned more than one result.", s))
+      } catch {
+        case e: Exception => fail(DslError(s"Query $q produced exception:\n$e", s))
+      }
     }
 
     def renderVertex(s: DslStateData, vertexName: String, getV: GetVertex): (String, Option[String]) = getV match {
@@ -95,10 +100,10 @@ object DslCompiler {
           .foldLeft(List.empty[String], List.empty[String], List.empty[String]) {
             case ((curQuery: List[String], curWhereId: List[String], curReturn: List[String]), ((gv, curLabels), curIndex)) =>
               val (curS, maybeCurId) = renderVertex(s, s"a$curIndex", gv)
-              val connector = s"-[${labels(curLabels)}]->"
+              val connector = s"-[e$curIndex ${labels(curLabels)}]->"
               val queryPart: String = s"$connector $curS"
 
-              val returnPart = s"a$curIndex, ID(a$curIndex) AS a${curIndex}Id"
+              val returnPart = s"a$curIndex, ID(a$curIndex) AS a${curIndex}Id, ID(e$curIndex) AS e${curIndex}Id"
 
               (queryPart +: curQuery, maybeCurId.map(_ +: curWhereId).getOrElse(curWhereId), returnPart +: curReturn)
           }
@@ -110,36 +115,52 @@ object DslCompiler {
 
       val result = s.graph.tx(fullQuery).list()
 
-      if(result.size() == 0)
-        fail(DslError(s"Query $fullQuery returned no results.", s))
-      else if (result.size() == 1)
-        success(s, collectVertices(1 + rest.length, result.iterator().next()))
-      else
-        fail(DslError(s"Query $fullQuery returned more than one result. Impossibru!", s))
+      try {
+        if (result.size() == 0)
+          fail(DslError(s"Query $fullQuery returned no results.", s))
+        else if (result.size() == 1) {
+          val (path, seenVertexIds, seenEdgeIds) = collectVertices(1 + rest.length, result.iterator().next())
+          success(s.seeEdges(seenEdgeIds).seeVertices(seenVertexIds), path)
+        } else
+          fail(DslError(s"Query $fullQuery returned more than one result. Impossibru!", s))
+      } catch {
+        case e: Exception => fail(DslError(s"Query $fullQuery produced exception:\n$e", s))
+      }
     }
 
-    def collectVertices(vertexNr: Int, result: Record): MatchedPath = {
-      val rawVertices = (0 until vertexNr).map { vertexIndex =>
-        val id = result.get(s"a${vertexIndex}Id").asLong()
+    // Returns (Path, matched node ids, matched edge ids)
+    def collectVertices(vertexNr: Int, result: Record): (MatchedPath, Set[Long], Set[Long]) = {
+      println(PrettyPrint.prettyPrint(new WrappedRecord(result))(InternalTypeSystem.TYPE_SYSTEM))
+      val rawResult = (0 until vertexNr).map { vertexIndex =>
+        val vertexId = result.get(s"a${vertexIndex}Id").asLong()
+//        val edgeId = result.get(s"e${vertexIndex}Id").asLong()
 
         val curVertex = result.get(s"a$vertexIndex")
         val uid = UUID.fromString(curVertex.get("uid").asString())
         // Todo: Extract labels and attributes
-        MatchedVertex(id, uid, Set.empty, Map.empty)
+//        (MatchedVertex(vertexId, uid, Set.empty, Map.empty), vertexId, edgeId)
+        (MatchedVertex(vertexId, uid, Set.empty, Map.empty), vertexId)
       }.toList
-      MatchedPath(rawVertices)
+
+      val edgeIds = (1 until vertexNr).map { vertexIndex =>
+        val edgeId = result.get(s"e${vertexIndex}Id").asLong()
+        edgeId
+      }.toSet
+
+//      (MatchedPath(rawResult.map(_._1)), rawResult.map(_._2).toSet, rawResult.map(_._3).toSet)
+      (MatchedPath(rawResult.map(_._1)), rawResult.map(_._2).toSet, edgeIds)
     }
 
-    def matchEdge(left: MatchedVertex, right: MatchedVertex, curLabels: Set[EdgeLabel]): DslState[Unit] = state { s =>
-      val q = s"MATCH (a { id: ${left.id}) -[${labels(curLabels)}]-> (b { id: ${right.id}) RETURN a, b"
-      val result = s.graph.tx(q).list()
-
-      if(result.size() == 0)
-        fail(DslError(s"Query $q returned no results.", s))
-      else if (result.size() == 1) {
-        success(s, ())
-      } else
-        fail(DslError(s"Query $q returned more than one result. Impossibru!", s))
-    }
+//    def matchEdge(left: MatchedVertex, right: MatchedVertex, curLabels: Set[EdgeLabel]): DslState[Unit] = state { s =>
+//      val q = s"MATCH (a { id: ${left.id}) -[${labels(curLabels)}]-> (b { id: ${right.id}) RETURN a, b"
+//      val result = s.graph.tx(q).list()
+//
+//      if(result.size() == 0)
+//        fail(DslError(s"Query $q returned no results.", s))
+//      else if (result.size() == 1) {
+//        success(s, ())
+//      } else
+//        fail(DslError(s"Query $q returned more than one result. Impossibru!", s))
+//    }
   }
 }

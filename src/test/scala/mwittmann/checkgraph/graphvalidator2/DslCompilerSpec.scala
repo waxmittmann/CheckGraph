@@ -47,6 +47,7 @@ class DslCompilerSpec extends Specification {
 
       // Run test program, check result
       val result = CheckGraph.check(graphLabel, program)
+      println(result)
       val resultValue: (DslStateData, (MatchedPath, MatchedPath)) = result.right.get.right.get
 
       val (MatchedPath(path1), MatchedPath(path2)) = resultValue._2

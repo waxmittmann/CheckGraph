@@ -8,6 +8,7 @@ import cats.free.Free
 import cats.free.Free.liftF
 import cats.implicits._
 import cats.~>
+import scala.collection.JavaConverters._
 
 object CheckGraph {
 
@@ -19,7 +20,7 @@ object CheckGraph {
     graphLabel: String,
     program: CheckProgram[S]
   ): ProgramResult[S] = {
-    val driver = wrappedDriver()
+    val driver: WrappedNeo4jDriver = wrappedDriver()
     try {
 
       val compiledProgram: DslState[S] = program.foldMap(DslCompiler.compiler)
@@ -30,10 +31,9 @@ object CheckGraph {
         baseAttributes = Map.empty
       ))
 
-
       val checkedResult =
         result.flatMap { case (state, v) =>
-          val x: ErrorOr[(DslStateData, S)] = checkResultState(state).right.map(_ => (state, v))
+          val x: ErrorOr[(DslStateData, S)] = checkResultState(driver, state).right.map(_ => (state, v))
           x
         }
 
@@ -46,12 +46,12 @@ object CheckGraph {
     }
   }
 
-  private def checkResultState(result: DslStateData): Either[DslError, Unit] = {
+  private def checkResultState(driver: WrappedNeo4jDriver, result: DslStateData): Either[DslError, Unit] = {
     val seenEdges = result.seenEdges
     val seenVertices = result.seenVertices
 
-    val actualEdges = getAllEdgeIds
-    val actualVertices = getAllVertexIds
+    val actualEdges = getAllEdgeIds(driver, result.graphLabel)
+    val actualVertices = getAllVertexIds(driver, result.graphLabel)
 
     if (seenVertices.diff(actualVertices).nonEmpty) {
       Left(DslError(s"Saw unexpected vertices with ids: ${seenVertices.diff(actualVertices)}", result))
@@ -66,9 +66,23 @@ object CheckGraph {
     }
   }
 
-  private def getAllEdgeIds: Set[Long] = ???
+  private def getAllEdgeIds(driver: WrappedNeo4jDriver, graphLabel: String): Set[Long] = {
+    val q =
+      s"""
+         |MATCH (:$graphLabel) -[e]- (:$graphLabel) RETURN collect(ID(e)) AS ids
+       """.stripMargin
 
-  private def getAllVertexIds: Set[Long] = ???
+    driver.tx(q).single().get("ids").asList(v => v.asLong()).asScala.toSet
+  }
+
+  private def getAllVertexIds(driver: WrappedNeo4jDriver, graphLabel: String): Set[Long] = {
+    val q =
+      s"""
+         |MATCH (v :$graphLabel) RETURN collect(ID(v)) AS ids
+       """.stripMargin
+
+    driver.tx(q).single().get("ids").asList(v => v.asLong()).asScala.toSet
+  }
 
   private def wrappedDriver(): WrappedNeo4jDriver = {
     val token: AuthToken = AuthTokens.basic("neo4j", "test")

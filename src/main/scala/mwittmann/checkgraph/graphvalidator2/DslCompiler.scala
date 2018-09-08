@@ -52,10 +52,10 @@ object DslCompiler {
 
     def vertex(name: String, matchedVertex: MatchedVertex): String =
       s"($name ${labels(matchedVertex.labels)} { } )"
-//      s"($name ${labels(matchedVertex.labels)} { id: ${matchedVertex.id} } )"
-//      s"($name ${labels(matchedVertex.labels)}) WHERE ID($name) = ${matchedVertex.id}"
 
-    def matchVertex(labels: Set[String], attributes:  Map[String, N4jValue]): DslState[MatchedVertex] = state { s: DslStateData =>
+    def matchVertex(
+      labels: Set[String], attributes:  Map[String, N4jValue]
+    ): DslState[MatchedVertex] = state { s: DslStateData =>
       val q = s"MATCH ${vertex("n", s, labels, attributes)} RETURN n, ID(n) AS nid"
 
       val result = s.graph.tx(q).list()
@@ -63,10 +63,16 @@ object DslCompiler {
       if(result.size() == 0)
         fail(DslError(s"Query $q returned no results.", s))
       else if (result.size() == 1) {
-        println(PrettyPrint.prettyPrint(new WrappedRecord(result.get(0)))(InternalTypeSystem.TYPE_SYSTEM))
         val vertex = result.get(0)
-        //println(vertex.get("n.uid").asString())
-        success(s, MatchedVertex(vertex.get("nid").asLong(), UUID.fromString(vertex.get("n").get("uid").asString()), labels, attributes))
+        success(
+          s,
+          MatchedVertex(
+            vertex.get("nid").asLong(),
+            UUID.fromString(vertex.get("n").get("uid").asString()),
+            labels,
+            attributes
+          )
+        )
       } else
         fail(DslError(s"Query $q returned more than one result.", s))
     }
@@ -101,9 +107,6 @@ object DslCompiler {
       val whereIdP = maybeFirstWhereId.map(_ +: otherWhereId).getOrElse(otherWhereId).mkString(" AND ")
       val returnP = (firstReturn +: otherReturn).mkString(",")
       val fullQuery = s"MATCH $queryP WHERE $whereIdP RETURN $returnP"
-//      val q =
-//
-//      val q = s"$firstS ${otherS.mkString}"
 
       val result = s.graph.tx(fullQuery).list()
 

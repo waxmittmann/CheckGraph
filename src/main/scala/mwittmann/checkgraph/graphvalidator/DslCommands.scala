@@ -34,9 +34,7 @@ object DslCommands {
     baseAttributes: Map[String, N4jType],
 
     // Vertices + edges seen so far
-//    seenVertices: Set[UUID] = Set.empty,
     seenVertices: Set[Long] = Set.empty,
-//    seenEdges: Set[(Long, Long)] = Set.empty
     seenEdges: Set[Long] = Set.empty
   ) { `this` =>
     def seeEdges(seenEdgeIds: Set[Long]): DslStateData = this.copy(seenEdges = seenEdges ++ seenEdgeIds)

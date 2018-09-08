@@ -1,19 +1,19 @@
-package mwittmann.checkgraph.graphvalidator2
+package mwittmann.checkgraph.graphvalidator
 
 import java.util.UUID
 import scala.util.Random
 
 import cats.free.Free
-import mwittmann.checkgraph.graphvalidator2.N4jUid
-import mwittmann.checkgraph.graphvalidator2.DslCommands.{DslCommand, DslState, DslStateData, MatchedPath, matchEdge, matchVertex}
+import mwittmann.checkgraph.graphvalidator.N4jUid
+import mwittmann.checkgraph.graphvalidator.DslCommands.{DslCommand, DslState, DslStateData, MatchedPath, matchEdge, matchVertex}
 import mwittmann.checkgraph.Example.wrappedDriver
 import org.specs2.mutable.Specification
 
 import utils.TestDriver
 
-class DslCompilerSpec extends Specification {
+class CheckGraphSpec extends Specification {
 
-  "compiler" should {
+  "check" should {
     "work for a simple example" in {
       val driver = TestDriver.wrappedDriver
 

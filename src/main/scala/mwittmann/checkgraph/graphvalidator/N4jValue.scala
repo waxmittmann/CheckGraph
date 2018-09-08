@@ -1,4 +1,3 @@
-/*
 package mwittmann.checkgraph.graphvalidator
 
 import java.util.UUID
@@ -57,4 +56,3 @@ object N4jValueImplicits {
     def asN4j: N4jString = N4jString(i)
   }
 }
-*/

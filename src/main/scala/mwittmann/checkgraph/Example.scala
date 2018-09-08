@@ -5,8 +5,8 @@ import scala.util.Random
 
 import cats.free.Free
 import cats.implicits._
-import mwittmann.checkgraph.graphvalidator2.DslCommands.{DslCommand, DslState, DslStateData, MatchedPath, matchEdge, matchVertex}
-import mwittmann.checkgraph.graphvalidator2.{DslCompiler, N4jUid}
+import mwittmann.checkgraph.graphvalidator.DslCommands.{DslCommand, DslState, DslStateData, MatchedPath, matchEdge, matchVertex}
+import mwittmann.checkgraph.graphvalidator.{DslCompiler, N4jUid}
 import mwittmann.checkgraph.utils.WrappedNeo4jDriver
 import org.neo4j.driver.v1._
 

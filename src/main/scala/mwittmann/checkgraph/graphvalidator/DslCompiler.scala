@@ -1,10 +1,10 @@
-package mwittmann.checkgraph.graphvalidator2
+package mwittmann.checkgraph.graphvalidator
 
 import java.util.UUID
 
 import cats.~>
-import mwittmann.checkgraph.graphvalidator2.{N4jValue, N4jValueRender}
-import mwittmann.checkgraph.graphvalidator2.DslCommands.{DslCommand, DslError, DslState, DslStateData, EdgeLabel, GetVertex, MatchPath, MatchVertex, MatchedPath, MatchedVertex, UseMatchedVertex, fail, success, value}
+import mwittmann.checkgraph.graphvalidator.{N4jValue, N4jValueRender}
+import mwittmann.checkgraph.graphvalidator.DslCommands.{DslCommand, DslError, DslState, DslStateData, EdgeLabel, GetVertex, MatchPath, MatchVertex, MatchedPath, MatchedVertex, UseMatchedVertex, fail, success, value}
 import org.neo4j.driver.v1.Record
 import java.util
 import java.util.UUID
@@ -16,7 +16,7 @@ import cats.free.Free
 import cats.free.Free.liftF
 import cats.implicits._
 import cats.~>
-import mwittmann.checkgraph.graphvalidator2.{N4jType, N4jValue, N4jValueRender}
+import mwittmann.checkgraph.graphvalidator.{N4jType, N4jValue, N4jValueRender}
 import mwittmann.checkgraph.utils.{PrettyPrint, WrappedNeo4j, WrappedNeo4jClient}
 import org.neo4j.driver.v1.Record
 import DslCommands._

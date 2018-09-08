@@ -1,6 +1,6 @@
-package mwittmann.checkgraph.graphvalidator2
+package mwittmann.checkgraph.graphvalidator
 
-import mwittmann.checkgraph.graphvalidator2.DslCommands._
+import mwittmann.checkgraph.graphvalidator.DslCommands._
 import mwittmann.checkgraph.utils.WrappedNeo4jDriver
 import org.neo4j.driver.v1._
 import cats.data._

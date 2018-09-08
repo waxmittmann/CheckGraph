@@ -1,12 +1,12 @@
-//package mwittmann.checkgraph.graphvalidator
+//package mwittmann.checkgraph.graphvalidator2
 //
 //import java.util.UUID
 //import scala.collection.JavaConverters._
 //
+//import mwittmann.checkgraph.graphvalidator2.DslCommands.{DslStateData, ErrorOr}
 //import org.neo4j.driver.v1.types.Relationship
-//
 //import mwittmann.checkgraph.utils.CatchError.catchError
-//import mwittmann.checkgraph.graphvalidator.Dsl.ErrorOr
+////import mwittmann.checkgraph.graphvalidator.Dsl.ErrorOr
 //import mwittmann.checkgraph.utils.{WrappedNeo4jClient, PrettyPrint, WrappedNeo4jDriver}
 //import mwittmann.checkgraph.utils.WrappedNeo4j.Implicits._
 //

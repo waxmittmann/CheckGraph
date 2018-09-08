@@ -3,7 +3,7 @@ package utils
 import scala.util.Random
 
 //import mwittmann.checkgraph.graphvalidator2.{GraphCheckData, N4jType}
-import mwittmann.checkgraph.graphvalidator2.N4jType
+import mwittmann.checkgraph.graphvalidator.N4jType
 import mwittmann.checkgraph.utils.WrappedNeo4jDriver
 import org.neo4j.driver.v1._
 

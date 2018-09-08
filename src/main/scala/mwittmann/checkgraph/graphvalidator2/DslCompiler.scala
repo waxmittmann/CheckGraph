@@ -130,37 +130,22 @@ object DslCompiler {
 
     // Returns (Path, matched node ids, matched edge ids)
     def collectVertices(vertexNr: Int, result: Record): (MatchedPath, Set[Long], Set[Long]) = {
-      println(PrettyPrint.prettyPrint(new WrappedRecord(result))(InternalTypeSystem.TYPE_SYSTEM))
-      val rawResult = (0 until vertexNr).map { vertexIndex =>
+      val verticesAndIds = (0 until vertexNr).map { vertexIndex =>
         val vertexId = result.get(s"a${vertexIndex}Id").asLong()
-//        val edgeId = result.get(s"e${vertexIndex}Id").asLong()
 
         val curVertex = result.get(s"a$vertexIndex")
         val uid = UUID.fromString(curVertex.get("uid").asString())
         // Todo: Extract labels and attributes
-//        (MatchedVertex(vertexId, uid, Set.empty, Map.empty), vertexId, edgeId)
         (MatchedVertex(vertexId, uid, Set.empty, Map.empty), vertexId)
       }.toList
 
+      // Have to do edges separately since we have (vertex-1) edges
       val edgeIds = (1 until vertexNr).map { vertexIndex =>
         val edgeId = result.get(s"e${vertexIndex}Id").asLong()
         edgeId
       }.toSet
 
-//      (MatchedPath(rawResult.map(_._1)), rawResult.map(_._2).toSet, rawResult.map(_._3).toSet)
-      (MatchedPath(rawResult.map(_._1)), rawResult.map(_._2).toSet, edgeIds)
+      (MatchedPath(verticesAndIds.map(_._1)), verticesAndIds.map(_._2).toSet, edgeIds)
     }
-
-//    def matchEdge(left: MatchedVertex, right: MatchedVertex, curLabels: Set[EdgeLabel]): DslState[Unit] = state { s =>
-//      val q = s"MATCH (a { id: ${left.id}) -[${labels(curLabels)}]-> (b { id: ${right.id}) RETURN a, b"
-//      val result = s.graph.tx(q).list()
-//
-//      if(result.size() == 0)
-//        fail(DslError(s"Query $q returned no results.", s))
-//      else if (result.size() == 1) {
-//        success(s, ())
-//      } else
-//        fail(DslError(s"Query $q returned more than one result. Impossibru!", s))
-//    }
   }
 }

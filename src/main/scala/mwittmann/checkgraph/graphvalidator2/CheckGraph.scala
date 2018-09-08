@@ -32,13 +32,9 @@ object CheckGraph {
       ))
 
       val checkedResult =
-        result.flatMap { case (state, v) =>
-          val x: ErrorOr[(DslStateData, S)] = checkResultState(driver, state).right.map(_ => (state, v))
-          x
-        }
+        result.flatMap { case (state, v) => checkResultState(driver, state).right.map(_ => (state, v)) }
 
       Right(checkedResult) : ProgramResult[S]
-      //Right(result) : ProgramResult[S]
     } catch {
       case t: Exception => Left(t)
     } finally {

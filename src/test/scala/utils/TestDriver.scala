@@ -2,7 +2,8 @@ package utils
 
 import scala.util.Random
 
-import mwittmann.checkgraph.graphvalidator2.{GraphCheckData, N4jType}
+//import mwittmann.checkgraph.graphvalidator2.{GraphCheckData, N4jType}
+import mwittmann.checkgraph.graphvalidator2.N4jType
 import mwittmann.checkgraph.utils.WrappedNeo4jDriver
 import org.neo4j.driver.v1._
 
@@ -19,6 +20,6 @@ object TestDriver {
 
   val wrappedDriver = new WrappedNeo4jDriver(driver)
 
-  def gcd(ba: Map[String, N4jType] = Map.empty) =
-    GraphCheckData(wrappedDriver, s"G${Random.alphanumeric.take(20).mkString}", ba)
+//  def gcd(ba: Map[String, N4jType] = Map.empty) =
+//    GraphCheckData(wrappedDriver, s"G${Random.alphanumeric.take(20).mkString}", ba)
 }

@@ -1,18 +1,14 @@
-package mwittmann.checkgraph.graphvalidator2
+package mwittmann.checkgraph
 
 import java.util.UUID
 import scala.util.Random
 
 import cats.free.Free
-import mwittmann.checkgraph.graphvalidator2.{N4jType, N4jUid}
-import mwittmann.checkgraph.graphvalidator2.DslCommands.{DslCommand, DslState, DslStateData, MatchedPath, matchEdge, matchVertex}
-import mwittmann.checkgraph.utils.{WrappedNeo4jClient, WrappedNeo4jDriver}
-import org.neo4j.driver.v1._
-import cats.data._
-import cats.free.Free
-import cats.free.Free.liftF
 import cats.implicits._
-import cats.~>
+import mwittmann.checkgraph.graphvalidator2.DslCommands.{DslCommand, DslState, DslStateData, MatchedPath, matchEdge, matchVertex}
+import mwittmann.checkgraph.graphvalidator2.{DslCompiler, N4jUid}
+import mwittmann.checkgraph.utils.WrappedNeo4jDriver
+import org.neo4j.driver.v1._
 
 object Example {
 

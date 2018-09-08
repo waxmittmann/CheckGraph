@@ -30,7 +30,15 @@ object CheckGraph {
         baseAttributes = Map.empty
       ))
 
-      Right(result) : ProgramResult[S]
+
+      val checkedResult =
+        result.flatMap { case (state, v) =>
+          val x: ErrorOr[(DslStateData, S)] = checkResultState(state).right.map(_ => (state, v))
+          x
+        }
+
+      Right(checkedResult) : ProgramResult[S]
+      //Right(result) : ProgramResult[S]
     } catch {
       case t: Exception => Left(t)
     } finally {
@@ -38,7 +46,31 @@ object CheckGraph {
     }
   }
 
-  def wrappedDriver(): WrappedNeo4jDriver = {
+  private def checkResultState(result: DslStateData): Either[DslError, Unit] = {
+    val seenEdges = result.seenEdges
+    val seenVertices = result.seenVertices
+
+    val actualEdges = getAllEdgeIds
+    val actualVertices = getAllVertexIds
+
+    if (seenVertices.diff(actualVertices).nonEmpty) {
+      Left(DslError(s"Saw unexpected vertices with ids: ${seenVertices.diff(actualVertices)}", result))
+    } else if (actualVertices.diff(seenVertices).nonEmpty) {
+      Left(DslError(s"Did not see expected vertices with ids: ${actualVertices.diff(seenVertices)}", result))
+    } else if (seenEdges.diff(actualEdges).nonEmpty) {
+      Left(DslError(s"Saw unexpected edges with ids: ${seenEdges.diff(actualEdges)}", result))
+    } else if (actualEdges.diff(seenEdges).nonEmpty) {
+      Left(DslError(s"Did not see expected edges with ids: ${actualEdges.diff(seenEdges)}", result))
+    } else {
+      Right()
+    }
+  }
+
+  private def getAllEdgeIds: Set[Long] = ???
+
+  private def getAllVertexIds: Set[Long] = ???
+
+  private def wrappedDriver(): WrappedNeo4jDriver = {
     val token: AuthToken = AuthTokens.basic("neo4j", "test")
 
     val driver: Driver = GraphDatabase.driver(

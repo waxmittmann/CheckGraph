@@ -29,9 +29,9 @@ object DslCommands {
 
   case class DslStateData(
     // 'Config' data
-    graphLabel: String,
-    graph: WrappedNeo4jClient,
-    baseAttributes: Map[String, N4jType],
+//    graphLabel: String,
+//    graph: WrappedNeo4jClient,
+//    baseAttributes: Map[String, N4jType],
 
     // Vertices + edges seen so far
     seenVertices: Set[Long] = Set.empty,

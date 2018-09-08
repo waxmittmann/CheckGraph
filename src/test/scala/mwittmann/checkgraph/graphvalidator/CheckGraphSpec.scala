@@ -6,7 +6,6 @@ import scala.util.Random
 import cats.free.Free
 import mwittmann.checkgraph.graphvalidator.N4jUid
 import mwittmann.checkgraph.graphvalidator.DslCommands.{DslCommand, DslState, DslStateData, MatchedPath, matchEdge, matchVertex}
-import mwittmann.checkgraph.Example.wrappedDriver
 import org.specs2.mutable.Specification
 
 import utils.TestDriver

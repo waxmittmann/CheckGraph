@@ -24,24 +24,31 @@ import mwittmann.checkgraph.utils.WrappedNeo4j.WrappedRecord
 import org.neo4j.driver.internal.types.InternalTypeSystem
 
 object DslCompiler {
-  def compiler: DslCommand ~> DslState = new (DslCommand ~> DslState) {
-    override def apply[A](fa: DslCommand[A]): DslState[A] = fa match {
-      case MatchVertex(labels, attributes)  => Neo4jHelpers.matchVertex(labels, attributes).map(_.asInstanceOf[A]) // Eww...
+  case class DslCompilerConfig(
+    graphLabel: String,
+    graph: WrappedNeo4jClient,
+    baseAttributes: Map[String, N4jType]
+  )
 
-      case MatchPath(first, rest)           => Neo4jHelpers.matchPath(first, rest).map(_.asInstanceOf[A]) // Eww...
+  def compiler(config: DslCompilerConfig): DslCommand ~> DslState = new (DslCommand ~> DslState) {
+    val helpers = new Neo4jHelpers(config)
+    override def apply[A](fa: DslCommand[A]): DslState[A] = fa match {
+      case MatchVertex(labels, attributes)  => helpers.matchVertex(labels, attributes).map(_.asInstanceOf[A]) // Eww...
+
+      case MatchPath(first, rest)           => helpers.matchPath(first, rest).map(_.asInstanceOf[A]) // Eww...
 
       case UseMatchedVertex(vertex)         => value(vertex.asInstanceOf[A]) // Eww...
     }
   }
 
-  object Neo4jHelpers {
+  class Neo4jHelpers(config: DslCompilerConfig) {
 
     def labels(labels: Set[String]): String =
       labels.map(l => s":$l").mkString(" ")
 
     def labelsWithGraphLabel(state: DslStateData, labels: Set[String]): String = {
-      println(s"Labels with graph label: ${(state.graphLabel + labels)}")
-      (labels + state.graphLabel).map(l => s":$l").mkString(" ")
+      println(s"Labels with graph label: ${(config.graphLabel + labels)}")
+      (labels + config.graphLabel).map(l => s":$l").mkString(" ")
     }
 
     def vertexAttributes(state: DslStateData, attributes: Map[String, N4jValue]): String =
@@ -58,7 +65,7 @@ object DslCompiler {
     ): DslState[MatchedVertex] = state { s: DslStateData =>
       val q = s"MATCH ${vertex("n", s, labels, attributes)} RETURN n, ID(n) AS nid"
 
-      val result = s.graph.tx(q).list()
+      val result = config.graph.tx(q).list()
 
       try {
         if (result.size() == 0)
@@ -113,7 +120,7 @@ object DslCompiler {
       val returnP = (firstReturn +: otherReturn).mkString(",")
       val fullQuery = s"MATCH $queryP WHERE $whereIdP RETURN $returnP"
 
-      val result = s.graph.tx(fullQuery).list()
+      val result = config.graph.tx(fullQuery).list()
 
       try {
         if (result.size() == 0)

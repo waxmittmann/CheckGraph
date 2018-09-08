@@ -10,6 +10,8 @@ import cats.implicits._
 import cats.~>
 import scala.collection.JavaConverters._
 
+import mwittmann.checkgraph.graphvalidator.DslCompiler.DslCompilerConfig
+
 object CheckGraph {
 
   type CheckProgram[S] = Free[DslCommand, S]
@@ -23,16 +25,16 @@ object CheckGraph {
     val driver: WrappedNeo4jDriver = wrappedDriver()
     try {
 
-      val compiledProgram: DslState[S] = program.foldMap(DslCompiler.compiler)
-
-      val result: ErrorOr[(DslStateData, S)] = compiledProgram.run(DslStateData(
+      val compiledProgram: DslState[S] = program.foldMap(DslCompiler.compiler(DslCompilerConfig(
         graphLabel = graphLabel,
         graph = driver,
         baseAttributes = Map.empty
-      ))
+      )))
+
+      val result: ErrorOr[(DslStateData, S)] = compiledProgram.run(DslStateData())
 
       val checkedResult =
-        result.flatMap { case (state, v) => checkResultState(driver, state).right.map(_ => (state, v)) }
+        result.flatMap { case (state, v) => checkResultState(driver, graphLabel, state).right.map(_ => (state, v)) }
 
       Right(checkedResult) : ProgramResult[S]
     } catch {
@@ -42,12 +44,14 @@ object CheckGraph {
     }
   }
 
-  private def checkResultState(driver: WrappedNeo4jDriver, result: DslStateData): Either[DslError, Unit] = {
+  private def checkResultState(
+    driver: WrappedNeo4jDriver, graphLabel: String, result: DslStateData
+  ): Either[DslError, Unit] = {
     val seenEdges = result.seenEdges
     val seenVertices = result.seenVertices
 
-    val actualEdges = getAllEdgeIds(driver, result.graphLabel)
-    val actualVertices = getAllVertexIds(driver, result.graphLabel)
+    val actualEdges = getAllEdgeIds(driver, graphLabel)
+    val actualVertices = getAllVertexIds(driver, graphLabel)
 
     if (seenVertices.diff(actualVertices).nonEmpty) {
       Left(DslError(s"Saw unexpected vertices with ids: ${seenVertices.diff(actualVertices)}", result))

@@ -49,9 +49,10 @@ class DslCompilerSpec extends Specification {
       val result = CheckGraph.check(graphLabel, program)
       val resultValue: (DslStateData, (MatchedPath, MatchedPath)) = result.right.get.right.get
 
-      println(resultValue)
-      ok
+      val (MatchedPath(path1), MatchedPath(path2)) = resultValue._2
+
+      path1.map(_.uid) mustEqual List(aUid, bUid)
+      path2.map(_.uid) mustEqual List(bUid, cUid)
     }
   }
-
 }

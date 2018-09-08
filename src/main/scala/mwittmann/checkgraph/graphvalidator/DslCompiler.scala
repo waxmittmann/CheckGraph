@@ -43,23 +43,6 @@ object DslCompiler {
 
   class Neo4jHelpers(config: DslCompilerConfig) {
 
-    def labels(labels: Set[String]): String =
-      labels.map(l => s":$l").mkString(" ")
-
-    def labelsWithGraphLabel(state: DslStateData, labels: Set[String]): String = {
-      println(s"Labels with graph label: ${(config.graphLabel + labels)}")
-      (labels + config.graphLabel).map(l => s":$l").mkString(" ")
-    }
-
-    def vertexAttributes(state: DslStateData, attributes: Map[String, N4jValue]): String =
-      s"{ ${attributes.map { case (key, value) => s"$key: ${N4jValueRender.renderInCypher(value)}"}.mkString(",")} }"
-
-    def vertex(name: String, state: DslStateData, labels: Set[String], attributes: Map[String, N4jValue]): String =
-      s"($name ${labelsWithGraphLabel(state, labels)} ${vertexAttributes(state, attributes)} )"
-
-    def vertex(name: String, matchedVertex: MatchedVertex): String =
-      s"($name ${labels(matchedVertex.labels)} { } )"
-
     def matchVertex(
       labels: Set[String], attributes:  Map[String, N4jValue]
     ): DslState[MatchedVertex] = state { s: DslStateData =>
@@ -135,8 +118,22 @@ object DslCompiler {
       }
     }
 
+    private def labels(labels: Set[String], withGraphLabel: Boolean = false): String = {
+      val l = if (withGraphLabel) labels + config.graphLabel else labels
+      l.map(l => s":$l").mkString(" ")
+    }
+
+    private def vertexAttributes(state: DslStateData, attributes: Map[String, N4jValue]): String =
+      s"{ ${attributes.map { case (key, value) => s"$key: ${N4jValueRender.renderInCypher(value)}"}.mkString(",")} }"
+
+    private def vertex(name: String, state: DslStateData, vlabels: Set[String], attributes: Map[String, N4jValue]): String =
+      s"($name ${labels(vlabels, withGraphLabel = true)} ${vertexAttributes(state, attributes)} )"
+
+    private def vertex(name: String, matchedVertex: MatchedVertex): String =
+      s"($name ${labels(matchedVertex.labels)} { } )"
+
     // Returns (Path, matched node ids, matched edge ids)
-    def collectVertices(vertexNr: Int, result: Record): (MatchedPath, Set[Long], Set[Long]) = {
+    private def collectVertices(vertexNr: Int, result: Record): (MatchedPath, Set[Long], Set[Long]) = {
       val verticesAndIds = (0 until vertexNr).map { vertexIndex =>
         val vertexId = result.get(s"a${vertexIndex}Id").asLong()
 

@@ -86,7 +86,7 @@ object DslCompiler {
 
       val (otherQuery, otherWhereId, otherReturn) =
         rest.zipWithIndex.map(v => (v._1, v._2 + 1))
-          .foldLeft(List.empty[String], List.empty[String], List.empty[String]) {
+          .reverse.foldLeft(List.empty[String], List.empty[String], List.empty[String]) {
             case ((curQuery: List[String], curWhereId: List[String], curReturn: List[String]), ((gv, curLabels), curIndex)) =>
               val (curS, maybeCurId) = renderVertex(s, s"a$curIndex", gv)
               val connector = s"-[e$curIndex ${labels(curLabels)}]->"

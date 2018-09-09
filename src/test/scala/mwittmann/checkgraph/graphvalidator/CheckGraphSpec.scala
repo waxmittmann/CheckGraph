@@ -96,11 +96,10 @@ class CheckGraphSpec extends Specification {
       // Run test program, check result
       val result: ProgramResult[(MatchedPath, MatchedPath)] = CheckGraph.check(graphLabel, program)
       val resultValue = getValue(result)
-//      val (MatchedPath(path1), MatchedPath(path2)) = resultValue._2
-//
-//      path1.map(_.uid) mustEqual List(aUid, bUid)
-//      path2.map(_.uid) mustEqual List(bUid, cUid)
-      ok
+      val (MatchedPath(path1), MatchedPath(path2)) = resultValue._2
+
+      path1.map(_.uid) mustEqual List(a1Uid, b1Uid, c1Uid)
+      path2.map(_.uid) mustEqual List(a1Uid, b2Uid, c2Uid)
     }
   }
 

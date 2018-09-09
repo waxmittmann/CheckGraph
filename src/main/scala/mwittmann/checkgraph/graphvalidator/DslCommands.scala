@@ -75,7 +75,8 @@ object DslCommands {
     rest: List[(GetVertex, Set[EdgeLabel])]
   ) extends DslCommand[MatchedPath] {
     def edgeTo(matchVertex: GetVertex, edgeLabels: Set[EdgeLabel]): MatchPath =
-      this.copy(rest = (matchVertex, edgeLabels) :: rest)
+//      this.copy(rest = (matchVertex, edgeLabels) :: rest)
+      this.copy(rest = rest :+ (matchVertex, edgeLabels))
   }
 
   type FreeDslCommand[A] = Free[DslCommand, A]

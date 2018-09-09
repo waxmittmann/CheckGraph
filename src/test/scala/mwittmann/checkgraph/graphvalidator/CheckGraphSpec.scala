@@ -100,7 +100,6 @@ class CheckGraphSpec extends Specification {
 //
 //      path1.map(_.uid) mustEqual List(aUid, bUid)
 //      path2.map(_.uid) mustEqual List(bUid, cUid)
-
       ok
     }
   }

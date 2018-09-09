@@ -8,7 +8,7 @@ import mwittmann.checkgraph.graphvalidator.CheckGraph.ProgramResult
 import mwittmann.checkgraph.graphvalidator.N4jUid
 import mwittmann.checkgraph.graphvalidator.DslCommands.{DslCommand, DslState, DslStateData, MatchedPath, matchEdge, matchVertex}
 import org.specs2.mutable.Specification
-import DslCommands.MatchVertexImplicits
+import DslCommands._
 
 import utils.TestDriver
 
@@ -84,7 +84,7 @@ class CheckGraphSpec extends Specification {
       val program: Free[DslCommand, (MatchedPath, MatchedPath)] =
         for {
           p1 <- matchVertex(Set("A"), Map("uid" -> N4jUid(a1Uid))) -->
-            matchVertex(Set("B"), Map.empty) -->
+            matchVertex(Set("B"), Map.empty)  -->
             matchVertex(Set("C"), Map("uid" -> N4jUid(c1Uid)))
 
           p2 <- matchVertex(Set("A"), Map("uid" -> N4jUid(a1Uid))) -->
@@ -92,7 +92,15 @@ class CheckGraphSpec extends Specification {
             matchVertex(Set("C"), Map("uid" -> N4jUid(c2Uid)))
         } yield (p1, p2)
 
+      // Run test program, check result
+      val result: ProgramResult[(MatchedPath, MatchedPath)] = CheckGraph.check(graphLabel, program)
+      val resultValue = getValue(result)
+//      val (MatchedPath(path1), MatchedPath(path2)) = resultValue._2
+//
+//      path1.map(_.uid) mustEqual List(aUid, bUid)
+//      path2.map(_.uid) mustEqual List(bUid, cUid)
 
+      ok
     }
   }
 

@@ -71,11 +71,11 @@ class CheckGraphSpec extends Specification {
       val q =
         s"""
            |CREATE (a1 :A :$graphLabel { uid: '${a1Uid.toString}' })
-           |  -[:RELATES_TO]-> (b1 :B :$graphLabel { uid: '${b1Uid.toString}' })
-           |  -[:RELATES_TO]-> (c1 :C :$graphLabel { uid: '${c1Uid.toString}' }),
+           |  -[:RELATES_TO_AB]-> (b1 :B :$graphLabel { uid: '${b1Uid.toString}' })
+           |  -[:RELATES_TO_BC]-> (c1 :C :$graphLabel { uid: '${c1Uid.toString}' }),
            |(a1)
-           |  -[:RELATES_TO]-> (b2 :B :$graphLabel { uid: '${b2Uid.toString}' })
-           |  -[:RELATES_TO]-> (c2 :C :$graphLabel { uid: '${c2Uid.toString}' })
+           |  -[:RELATES_TO_AB]-> (b2 :B :$graphLabel { uid: '${b2Uid.toString}' })
+           |  -[:RELATES_TO_BC]-> (c2 :C :$graphLabel { uid: '${c2Uid.toString}' })
            |RETURN a1, b1, c1, b2, c2
        """.stripMargin
 
@@ -88,8 +88,11 @@ class CheckGraphSpec extends Specification {
             matchVertex(Set("B"), Map.empty)  -->
             matchVertex(Set("C"), Map("uid" -> N4jUid(c1Uid)))
 
-          p2 <- matchVertex(Set("A"), Map("uid" -> N4jUid(a1Uid))) -->
-            matchVertex(Set("B"), Map.empty) -->
+          a = p1.vertices.head
+
+//          p2 <- matchVertex(Set("A"), Map("uid" -> N4jUid(a1Uid))) -"RELATES_TO_AB"->
+          p2 <- a -"RELATES_TO_AB"->
+            matchVertex(Set("B"), Map.empty) -"RELATES_TO_BC"->
             matchVertex(Set("C"), Map("uid" -> N4jUid(c2Uid)))
         } yield (p1, p2)
 

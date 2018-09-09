@@ -164,4 +164,9 @@ object DslCommands {
       PartialMatchPath(leftMatch, edgeLabels.toSet)
 
   }
+
+  implicit class MatchedPathImplicits(matchedPath: MatchedPath) {
+    def first: MatchedVertex = matchedPath.vertices.head
+    def last: MatchedVertex = matchedPath.vertices.last
+  }
 }

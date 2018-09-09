@@ -88,10 +88,7 @@ class CheckGraphSpec extends Specification {
             matchVertex(Set("B"), Map.empty)  -->
             matchVertex(Set("C"), Map("uid" -> N4jUid(c1Uid)))
 
-          a = p1.vertices.head
-
-//          p2 <- matchVertex(Set("A"), Map("uid" -> N4jUid(a1Uid))) -"RELATES_TO_AB"->
-          p2 <- a -"RELATES_TO_AB"->
+          p2 <- p1.first -"RELATES_TO_AB"->
             matchVertex(Set("B"), Map.empty) -"RELATES_TO_BC"->
             matchVertex(Set("C"), Map("uid" -> N4jUid(c2Uid)))
         } yield (p1, p2)

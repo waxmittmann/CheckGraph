@@ -8,6 +8,7 @@ import mwittmann.checkgraph.graphvalidator.CheckGraph.ProgramResult
 import mwittmann.checkgraph.graphvalidator.N4jUid
 import mwittmann.checkgraph.graphvalidator.DslCommands.{DslCommand, DslState, DslStateData, MatchedPath, matchEdge, matchVertex}
 import org.specs2.mutable.Specification
+import DslCommands.MatchVertexImplicits
 
 import utils.TestDriver
 
@@ -52,6 +53,46 @@ class CheckGraphSpec extends Specification {
 
       path1.map(_.uid) mustEqual List(aUid, bUid)
       path2.map(_.uid) mustEqual List(bUid, cUid)
+    }
+
+    "work for an edge where we don't have a unique for the middle vertex" in {
+      val driver = TestDriver.wrappedDriver
+
+      // Create test data
+      val a1Uid = UUID.randomUUID()
+      val b1Uid = UUID.randomUUID()
+      val b2Uid = UUID.randomUUID()
+      val c1Uid = UUID.randomUUID()
+      val c2Uid = UUID.randomUUID()
+
+      val graphLabel = s"G_${Random.alphanumeric.take(20).mkString}"
+
+      val q =
+        s"""
+           |CREATE (a1 :A :$graphLabel { uid: '${a1Uid.toString}' })
+           |  -[:RELATES_TO]-> (b1 :B :$graphLabel { uid: '${b1Uid.toString}' })
+           |  -[:RELATES_TO]-> (c1 :C :$graphLabel { uid: '${c1Uid.toString}' }),
+           |(a1)
+           |  -[:RELATES_TO]-> (b2 :B :$graphLabel { uid: '${b2Uid.toString}' })
+           |  -[:RELATES_TO]-> (c2 :C :$graphLabel { uid: '${c2Uid.toString}' }),
+           |RETURN a1, b1, c1, b2, c2
+       """.stripMargin
+
+      driver.tx(q)
+
+      // Program to test
+      val program: Free[DslCommand, (MatchedPath, MatchedPath)] =
+        for {
+          p1 <- matchVertex(Set("A"), Map("uid" -> N4jUid(a1Uid))) -->
+            matchVertex(Set("B"), Map.empty) -->
+            matchVertex(Set("C"), Map("uid" -> N4jUid(c1Uid)))
+
+          p2 <- matchVertex(Set("A"), Map("uid" -> N4jUid(a1Uid))) -->
+            matchVertex(Set("B"), Map.empty) -->
+            matchVertex(Set("C"), Map("uid" -> N4jUid(c2Uid)))
+        } yield (p1, p2)
+
+
     }
   }
 

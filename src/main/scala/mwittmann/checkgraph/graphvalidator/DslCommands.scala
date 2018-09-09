@@ -23,36 +23,41 @@ object DslCommands {
     * result smart constructors
     */
   def value[A](v: A): DslState[A] = StateT[ErrorOr, DslStateData, A](s => Right((s, v)))
+
   def state[A](fn: DslStateData => ErrorOr[(DslStateData, A)]): DslState[A] = StateT[ErrorOr, DslStateData, A](fn)
+
   def fail[A](err: DslError): ErrorOr[(DslStateData, A)] = Left(err)
+
   def success[A](r: DslStateData, a: A): ErrorOr[(DslStateData, A)] = Right((r, a))
 
   case class DslStateData(
     // 'Config' data
-//    graphLabel: String,
-//    graph: WrappedNeo4jClient,
-//    baseAttributes: Map[String, N4jType],
+    //    graphLabel: String,
+    //    graph: WrappedNeo4jClient,
+    //    baseAttributes: Map[String, N4jType],
 
     // Vertices + edges seen so far
     seenVertices: Set[Long] = Set.empty,
     seenEdges: Set[Long] = Set.empty
-  ) { `this` =>
+  ) {
+    `this` =>
     def seeEdges(seenEdgeIds: Set[Long]): DslStateData = this.copy(seenEdges = seenEdges ++ seenEdgeIds)
+
     def seeVertices(seenVertexIds: Set[Long]): DslStateData = this.copy(seenVertices = seenVertices ++ seenVertexIds)
 
     def seenVertex(newSeen: Long): DslStateData = `this`.copy(seenVertices = seenVertices + newSeen)
+
     def seenEdge(edgeId: Long): DslStateData = `this`.copy(seenEdges = seenEdges + edgeId)
   }
 
   case class DslError(err: String, state: DslStateData)
 
-  sealed trait MatchedNeo4j
-  case class MatchedVertex(id: Long, uid: UUID, labels: Set[String], attributes:  Map[String, N4jValue]) extends MatchedNeo4j
+  //  sealed trait MatchedNeo4j
+  case class MatchedVertex(id: Long, uid: UUID, labels: Set[String], attributes: Map[String, N4jValue]) // extends MatchedNeo4j
 
   type EdgeLabel = String
 
   sealed trait DslCommand[A]
-  type FreeDslCommand[A] = Free[DslCommand, A]
 
   sealed trait GetVertex extends DslCommand[MatchedVertex]
 
@@ -71,21 +76,21 @@ object DslCommands {
     def from(vertex: MatchedVertex): MatchedPath = MatchedPath(List(vertex))
   }
 
+  case class MatchPath(
+    first: GetVertex,
+    rest: List[(GetVertex, Set[EdgeLabel])]
+  ) extends DslCommand[MatchedPath] {
+    def edgeTo(matchVertex: GetVertex, edgeLabels: Set[EdgeLabel]): MatchPath =
+      this.copy(rest = rest :+ (matchVertex, edgeLabels))
+  }
+
+  type FreeDslCommand[A] = Free[DslCommand, A]
+
   def matchVertex(labels: Set[EdgeLabel], attributes: Map[String, N4jValue]): FreeDslCommand[MatchedVertex] =
     liftF[DslCommand, MatchedVertex](MatchVertex(labels, attributes))
 
   def useMatchedVertex(matched: MatchedVertex): FreeDslCommand[MatchedVertex] =
     liftF[DslCommand, MatchedVertex](UseMatchedVertex(matched))
-
-  case class MatchPath(
-    first: GetVertex,
-    rest: List[(GetVertex, Set[EdgeLabel])]
-  ) extends DslCommand[MatchedPath] {
-
-    def edgeTo(matchVertex: GetVertex, edgeLabels: Set[EdgeLabel]): MatchPath =
-      this.copy(rest = rest :+ (matchVertex, edgeLabels))
-
-  }
 
   def matchEdge(
     matchedLeft: MatchPath,
@@ -130,8 +135,42 @@ object DslCommands {
     liftF[DslCommand, MatchedPath](MatchPath(UseMatchedVertex(matchedLeft), List((UseMatchedVertex(matchedRight), edgeLabels))))
 
   implicit class MatchVertexImplicits(leftMatch: MatchVertex) {
-    def `<--`(rightMatch: MatchVertex, edgeLabels: Set[String]): MatchPath =
+    //    def `<--`(rightMatch: MatchVertex, edgeLabels: Set[String]): MatchPath =
+    //      MatchPath(leftMatch, List((rightMatch, edgeLabels)))
+
+    //    def -->(rightMatch: MatchVertex, edgeLabels: Set[String]): MatchPath =
+    //      MatchPath(leftMatch, List((rightMatch, edgeLabels)))
+
+    //    def -->(rightMatch: GetVertex, edgeLabels: Set[String]): MatchPath =
+    def -->(rightMatch: GetVertex, edgeLabels: Set[String]): MatchPath =
       MatchPath(leftMatch, List((rightMatch, edgeLabels)))
+
+  }
+
+  implicit class FreeMatchVertexImplicits(leftMatch: FreeDslCommand[MatchedVertex]) {
+    //    def `<--`(rightMatch: MatchVertex, edgeLabels: Set[String]): MatchPath =
+    //      MatchPath(leftMatch, List((rightMatch, edgeLabels)))
+
+    //    def -->(rightMatch: MatchVertex, edgeLabels: Set[String]): MatchPath =
+    //      MatchPath(leftMatch, List((rightMatch, edgeLabels)))
+
+    //    def -->(rightMatch: GetVertex, edgeLabels: Set[String]): MatchPath =
+    def -->(rightMatch: GetVertex, edgeLabels: Set[String]): FreeDslCommand[MatchPath] =
+      leftMatch.map((gv: MatchedVertex) => MatchPath(UseMatchedVertex(gv), List((rightMatch, edgeLabels))))
+
+
+    //      leftMatch.map((gv: MatchedNeo4j) => MatchPath(gv, List((rightMatch, edgeLabels))))
+    //      leftMatch.map((gv: MatchedVertex) => MatchPath(gv, List((rightMatch, edgeLabels))))
+
+  }
+
+  implicit class FreeMatchPathImplicits(leftMatch: FreeDslCommand[MatchedPath]) {
+    def -->(rightMatch: GetVertex, edgeLabels: Set[String]): FreeDslCommand[MatchedPath] =
+//      leftMatch.flatMap((gv: MatchedPath) => matchEdge(gv, List((rightMatch, edgeLabels))))
+//      leftMatch.flatMap((gv: MatchedPath) => matchEdge(gv, List((rightMatch, edgeLabels))))
+//      leftMatch.map((gv: MatchedPath) => matchEdge(gv, List((rightMatch, edgeLabels))))
+//      leftMatch.map((gv: MatchedPath) => MatchPath(UseMatchedVertex(gv), List((rightMatch, edgeLabels))))
+
   }
 
 }

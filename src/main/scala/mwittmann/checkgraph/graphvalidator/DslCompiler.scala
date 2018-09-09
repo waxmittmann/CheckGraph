@@ -5,8 +5,7 @@ import java.util.UUID
 import cats.~>
 import mwittmann.checkgraph.graphvalidator.{N4jValue, N4jValueRender}
 import mwittmann.checkgraph.graphvalidator.DslCommands.{DslCommand, DslError, DslState, DslStateData, EdgeLabel, GetVertex, MatchPath, MatchVertex, MatchedPath, MatchedVertex, UseMatchedVertex, fail, success, value}
-import org.neo4j.driver.v1.Record
-import java.util
+import org.neo4j.driver.v1.{Record, StatementResult}
 import java.util.UUID
 import scala.collection.immutable
 import scala.collection.JavaConverters._
@@ -17,7 +16,7 @@ import cats.free.Free.liftF
 import cats.implicits._
 import cats.~>
 import mwittmann.checkgraph.graphvalidator.{N4jType, N4jValue, N4jValueRender}
-import mwittmann.checkgraph.utils.{PrettyPrint, WrappedNeo4j, WrappedNeo4jClient}
+import mwittmann.checkgraph.utils.{CatchError, PrettyPrint, WrappedNeo4j, WrappedNeo4jClient}
 import org.neo4j.driver.v1.Record
 import DslCommands._
 import mwittmann.checkgraph.utils.WrappedNeo4j.WrappedRecord
@@ -86,7 +85,7 @@ object DslCompiler {
       val firstReturn = s"a0, ID(a0) AS a0Id"
 
       val (otherQuery, otherWhereId, otherReturn) =
-        rest.zipWithIndex.map(v => (v._1, v._2 + 1))
+        rest.reverse.zipWithIndex.map(v => (v._1, v._2 + 1))
           .foldLeft(List.empty[String], List.empty[String], List.empty[String]) {
             case ((curQuery: List[String], curWhereId: List[String], curReturn: List[String]), ((gv, curLabels), curIndex)) =>
               val (curS, maybeCurId) = renderVertex(s, s"a$curIndex", gv)
@@ -98,19 +97,60 @@ object DslCompiler {
               (queryPart +: curQuery, maybeCurId.map(_ +: curWhereId).getOrElse(curWhereId), returnPart +: curReturn)
           }
 
+
       val queryP = (firstQuery +: otherQuery).mkString
-      val whereIdP = maybeFirstWhereId.map(_ +: otherWhereId).getOrElse(otherWhereId).mkString(" AND ")
+      val whereIdP = {
+        val wheres = maybeFirstWhereId.map(_ +: otherWhereId).getOrElse(otherWhereId)
+        if (wheres.nonEmpty)
+          s"WHERE ${wheres.mkString(" AND ")}"
+        else
+          ""
+      }
+
       val returnP = (firstReturn +: otherReturn).mkString(",")
-      val fullQuery = s"MATCH $queryP WHERE $whereIdP RETURN $returnP"
+//      val fullQuery = s"MATCH $queryP WHERE $whereIdP RETURN $returnP"
+      val fullQuery = s"MATCH $queryP $whereIdP RETURN $returnP"
 
-      val result = config.graph.tx(fullQuery).list()
+//      val result = config.graph.tx(fullQuery).list()
 
+      tryCatch(
+        (r, s) => {
+          val (path, seenVertexIds, seenEdgeIds) = collectVertices(1 + rest.length, r)
+          success(s.seeEdges(seenEdgeIds).seeVertices(seenVertexIds), path)
+        },
+//        config.graph.tx(fullQuery),
+        fullQuery,
+        s
+      )
+
+//      try {
+//        if (result.size() == 0)
+//          fail(DslError(s"Query $fullQuery returned no results.", s))
+//        else if (result.size() == 1) {
+//          val (path, seenVertexIds, seenEdgeIds) = collectVertices(1 + rest.length, result.iterator().next())
+//          success(s.seeEdges(seenEdgeIds).seeVertices(seenVertexIds), path)
+//        } else
+//          fail(DslError(s"Query $fullQuery returned more than one result. Impossibru!", s))
+//      } catch {
+//        case e: Exception => fail(DslError(s"Query $fullQuery produced exception:\n$e", s))
+//      }
+    }
+
+    private def tryCatch[S](
+      fn: (Record, DslStateData) => ErrorOr[(DslStateData, S)],
+//      statementResult: StatementResult,
+      fullQuery: String,
+      s: DslStateData
+    ): ErrorOr[(DslStateData, S)] = {
       try {
+        val statementResult = CatchError.catchError(config.graph.tx(fullQuery))
+        val result = statementResult.list()
         if (result.size() == 0)
           fail(DslError(s"Query $fullQuery returned no results.", s))
         else if (result.size() == 1) {
-          val (path, seenVertexIds, seenEdgeIds) = collectVertices(1 + rest.length, result.iterator().next())
-          success(s.seeEdges(seenEdgeIds).seeVertices(seenVertexIds), path)
+          fn(result.iterator.next(), s)
+//          val (path, seenVertexIds, seenEdgeIds) = collectVertices(1 + rest.length, result.iterator().next())
+//          success(s.seeEdges(seenEdgeIds).seeVertices(seenVertexIds), path)
         } else
           fail(DslError(s"Query $fullQuery returned more than one result. Impossibru!", s))
       } catch {

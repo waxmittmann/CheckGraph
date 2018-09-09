@@ -9,6 +9,7 @@ import mwittmann.checkgraph.graphvalidator.N4jUid
 import mwittmann.checkgraph.graphvalidator.DslCommands.{DslCommand, DslState, DslStateData, MatchedPath, matchEdge, matchVertex}
 import org.specs2.mutable.Specification
 import DslCommands._
+import mwittmann.checkgraph.utils.CatchError
 
 import utils.TestDriver
 
@@ -74,11 +75,11 @@ class CheckGraphSpec extends Specification {
            |  -[:RELATES_TO]-> (c1 :C :$graphLabel { uid: '${c1Uid.toString}' }),
            |(a1)
            |  -[:RELATES_TO]-> (b2 :B :$graphLabel { uid: '${b2Uid.toString}' })
-           |  -[:RELATES_TO]-> (c2 :C :$graphLabel { uid: '${c2Uid.toString}' }),
+           |  -[:RELATES_TO]-> (c2 :C :$graphLabel { uid: '${c2Uid.toString}' })
            |RETURN a1, b1, c1, b2, c2
        """.stripMargin
 
-      driver.tx(q)
+      CatchError.catchError(driver.tx(q))
 
       // Program to test
       val program: Free[DslCommand, (MatchedPath, MatchedPath)] =
@@ -106,7 +107,7 @@ class CheckGraphSpec extends Specification {
 
   def getValue[S](result: ProgramResult[S]): (DslStateData, S) = {
     result must beRight
-    val r1 = result.right.get
+    val r1: ErrorOr[(DslStateData, S)] = result.right.get
     r1 must beRight
     r1.right.get
   }

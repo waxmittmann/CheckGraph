@@ -6,7 +6,7 @@ import scala.util.Random
 import cats.free.Free
 import mwittmann.checkgraph.graphvalidator.CheckGraph.ProgramResult
 import mwittmann.checkgraph.graphvalidator.N4jUid
-import mwittmann.checkgraph.graphvalidator.DslCommands.{DslCommand, DslState, DslStateData, MatchedPath, matchEdge, matchVertex}
+import mwittmann.checkgraph.graphvalidator.DslCommands.{DslCommand, DslState, DslStateData, MatchedPath, edge, vertex}
 import org.specs2.mutable.Specification
 import DslCommands._
 import mwittmann.checkgraph.utils.CatchError
@@ -39,12 +39,12 @@ class CheckGraphSpec extends Specification {
       val program: Free[DslCommand, (MatchedPath, MatchedPath)] =
         for {
 
-          v1  <- matchVertex(Set("A"), Map("uid" -> N4jUid(aUid)))
-          v2  <- matchVertex(Set("B"), Map("uid" -> N4jUid(bUid)))
-          a   <- matchEdge(v1, v2, Set("RELATES_TO"))
+          v1  <- vertex(Set("A"), Map("uid" -> N4jUid(aUid)))
+          v2  <- vertex(Set("B"), Map("uid" -> N4jUid(bUid)))
+          a   <- edge(v1, v2, Set("RELATES_TO"))
 
-          v3  <- matchVertex(Set("C"), Map("uid" -> N4jUid(cUid)))
-          b   <- matchEdge(a.vertices.last, v3, Set("RELATES_TO"))
+          v3  <- vertex(Set("C"), Map("uid" -> N4jUid(cUid)))
+          b   <- edge(a.vertices.last, v3, Set("RELATES_TO"))
         } yield (a, b)
 
       // Run test program, check result
@@ -84,13 +84,13 @@ class CheckGraphSpec extends Specification {
       // Program to test
       val program: Free[DslCommand, (MatchedPath, MatchedPath)] =
         for {
-          p1 <- matchVertex(Set("A"), Map("uid" -> N4jUid(a1Uid))) -->
-            matchVertex(Set("B"), Map.empty)  -->
-            matchVertex(Set("C"), Map("uid" -> N4jUid(c1Uid)))
+          p1 <- vertex(Set("A"), Map("uid" -> N4jUid(a1Uid))) -->
+            vertex(Set("B"), Map.empty)  -->
+            vertex(Set("C"), Map("uid" -> N4jUid(c1Uid)))
 
           p2 <- p1.first -"RELATES_TO_AB"->
-            matchVertex(Set("B"), Map.empty) -"RELATES_TO_BC"->
-            matchVertex(Set("C"), Map("uid" -> N4jUid(c2Uid)))
+            vertex(Set("B"), Map.empty) -"RELATES_TO_BC"->
+            vertex(Set("C"), Map("uid" -> N4jUid(c2Uid)))
         } yield (p1, p2)
 
       // Run test program, check result

@@ -81,49 +81,49 @@ object DslCommands {
 
   type FreeDslCommand[A] = Free[DslCommand, A]
 
-  def matchVertex(labels: Set[EdgeLabel], attributes: Map[String, N4jValue]): MatchVertex =
+  def vertex(labels: Set[EdgeLabel], attributes: Map[String, N4jValue]): MatchVertex =
     MatchVertex(labels, attributes)
 
-  def matchEdge(
+  def edge(
     matchedLeft: MatchPath,
     matchedRight: GetVertex,
     edgeLabels: Set[EdgeLabel]
   ): MatchPath = matchedLeft.edgeTo(matchedRight, edgeLabels)
 
-  def matchEdge(
+  def edge(
     matchedLeft: MatchPath,
     matchedRight: MatchedVertex,
     edgeLabels: Set[EdgeLabel]
   ): MatchPath = matchedLeft.edgeTo(UseMatchedVertex(matchedRight), edgeLabels)
 
-  def matchEdge(
+  def edge(
     matchedLeft: GetVertex,
     matchedRight: GetVertex,
     edgeLabels: Set[EdgeLabel]
   ): MatchPath = MatchPath(matchedLeft, List((matchedRight, edgeLabels)))
 
-  def matchEdge(
+  def edge(
     matchedLeft: GetVertex,
     matchedRight: MatchedVertex,
     edgeLabels: Set[EdgeLabel]
   ): MatchPath = MatchPath(matchedLeft, List((UseMatchedVertex(matchedRight), edgeLabels)))
 
-  def matchEdge(
+  def edge(
     matchedLeft: MatchedVertex,
     matchedRight: GetVertex,
     edgeLabels: Set[EdgeLabel]
   ): MatchPath = MatchPath(UseMatchedVertex(matchedLeft), List((matchedRight, edgeLabels)))
 
-  def matchEdge(
+  def edge(
     matchedLeft: MatchedVertex,
     matchedRight: MatchedVertex,
     edgeLabels: Set[EdgeLabel]
   ): MatchPath = MatchPath(UseMatchedVertex(matchedLeft), List((UseMatchedVertex(matchedRight), edgeLabels)))
 
-  implicit def asFree(mp: MatchPath): FreeDslCommand[MatchedPath] =
+  implicit def liftFree(mp: MatchPath): FreeDslCommand[MatchedPath] =
     liftF[DslCommand, MatchedPath](mp)
 
-  implicit def asFree(mp: MatchVertex): FreeDslCommand[MatchedVertex] =
+  implicit def liftFree(mp: MatchVertex): FreeDslCommand[MatchedVertex] =
     liftF[DslCommand, MatchedVertex](mp)
 
   implicit class FreeMatchVertexImplicits(leftMatch: MatchVertex) {

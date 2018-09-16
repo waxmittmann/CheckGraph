@@ -4,11 +4,11 @@ import java.util.UUID
 import scala.util.Random
 
 import cats.free.Free
-import mwittmann.checkgraph.graphvalidator.CheckGraph.ProgramResult
-import mwittmann.checkgraph.graphvalidator.N4jUid
-import mwittmann.checkgraph.graphvalidator.DslCommands.{DslCommand, DslState, DslStateData, MatchedPath, edge, vertex}
 import org.specs2.mutable.Specification
-import DslCommands._
+
+import mwittmann.checkgraph.graphvalidator.AllDsl._
+import mwittmann.checkgraph.graphvalidator.CheckGraph.ProgramResult
+import mwittmann.checkgraph.graphvalidator.DslCommands._
 import mwittmann.checkgraph.utils.CatchError
 
 import utils.TestDriver
@@ -48,8 +48,8 @@ class CheckGraphSpec extends Specification {
         } yield (a, b)
 
       // Run test program, check result
-      val result: ProgramResult[(MatchedPath, MatchedPath)] = CheckGraph.check(graphLabel, program)
-      val resultValue = getValue(result)
+      val result: ProgramResult[(MatchedPath, MatchedPath)] = CheckGraph.run(graphLabel, program)
+      val resultValue = CheckGraph.unsafeGetValue(result)
       val (MatchedPath(path1), MatchedPath(path2)) = resultValue._2
 
       path1.map(_.uid) mustEqual List(aUid, bUid)
@@ -94,19 +94,12 @@ class CheckGraphSpec extends Specification {
         } yield (p1, p2)
 
       // Run test program, check result
-      val result: ProgramResult[(MatchedPath, MatchedPath)] = CheckGraph.check(graphLabel, program)
-      val resultValue = getValue(result)
+      val result: ProgramResult[(MatchedPath, MatchedPath)] = CheckGraph.run(graphLabel, program)
+      val resultValue = CheckGraph.unsafeGetValue(result)
       val (MatchedPath(path1), MatchedPath(path2)) = resultValue._2
 
       path1.map(_.uid) mustEqual List(a1Uid, b1Uid, c1Uid)
       path2.map(_.uid) mustEqual List(a1Uid, b2Uid, c2Uid)
     }
-  }
-
-  def getValue[S](result: ProgramResult[S]): (DslStateData, S) = {
-    result must beRight
-    val r1: ErrorOr[(DslStateData, S)] = result.right.get
-    r1 must beRight
-    r1.right.get
   }
 }

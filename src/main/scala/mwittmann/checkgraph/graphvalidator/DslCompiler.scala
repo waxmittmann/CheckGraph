@@ -1,26 +1,21 @@
 package mwittmann.checkgraph.graphvalidator
 
 import java.util.UUID
-
-import cats.~>
-import mwittmann.checkgraph.graphvalidator.{N4jValue, N4jValueRender}
-import mwittmann.checkgraph.graphvalidator.DslCommands.{DslCommand, DslError, DslState, DslStateData, EdgeLabel, GetVertex, MatchPath, MatchVertex, MatchedPath, MatchedVertex, UseMatchedVertex, fail, success, value}
-import org.neo4j.driver.v1.{Record, StatementResult}
-import java.util.UUID
-import scala.collection.immutable
 import scala.collection.JavaConverters._
 
+import cats.~>
 import cats.data._
 import cats.free.Free
 import cats.free.Free.liftF
 import cats.implicits._
 import cats.~>
-import mwittmann.checkgraph.graphvalidator.{N4jType, N4jValue, N4jValueRender}
-import mwittmann.checkgraph.utils.{CatchError, PrettyPrint, WrappedNeo4j, WrappedNeo4jClient}
-import org.neo4j.driver.v1.Record
-import DslCommands._
-import mwittmann.checkgraph.utils.WrappedNeo4j.WrappedRecord
 import org.neo4j.driver.internal.types.InternalTypeSystem
+import org.neo4j.driver.v1.Record
+
+import DslCommands._
+import AllDsl._
+import mwittmann.checkgraph.utils.{CatchError, PrettyPrint, WrappedNeo4jClient}
+import mwittmann.checkgraph.utils.WrappedNeo4j.WrappedRecord
 
 object DslCompiler {
   case class DslCompilerConfig(
@@ -37,6 +32,8 @@ object DslCompiler {
       case MatchPath(first, rest)           => helpers.matchPath(first, rest).map(_.asInstanceOf[A]) // Eww...
 
       case UseMatchedVertex(vertex)         => value(vertex.asInstanceOf[A]) // Eww...
+
+      case Noop                             => value(().asInstanceOf[A]) // Eww...
     }
   }
 
@@ -53,15 +50,19 @@ object DslCompiler {
         if (result.size() == 0)
           fail(DslError(s"Query $q returned no results.", s))
         else if (result.size() == 1) {
-          val vertex = result.get(0)
-          val vertexId = vertex.get("nid").asLong()
+          val r = result.get(0)
+          val vertex = r.get("n")
+
+          val readAttributes: Map[String, N4jValue] = vertex.asMap(N4jValue.toN4jType).asScala.toMap
+
+          val vertexId = r.get("nid").asLong()
           success(
             s.seeVertices(Set(vertexId)),
             MatchedVertex(
               vertexId,
-              UUID.fromString(vertex.get("n").get("uid").asString()),
+              UUID.fromString(vertex.get("uid").asString()),
               labels,
-              attributes
+              readAttributes
             )
           )
         } else
@@ -87,15 +88,15 @@ object DslCompiler {
       val (otherQuery, otherWhereId, otherReturn) =
         rest.zipWithIndex.map(v => (v._1, v._2 + 1))
           .reverse.foldLeft(List.empty[String], List.empty[String], List.empty[String]) {
-            case ((curQuery: List[String], curWhereId: List[String], curReturn: List[String]), ((gv, curLabels), curIndex)) =>
-              val (curS, maybeCurId) = renderVertex(s, s"a$curIndex", gv)
-              val connector = s"-[e$curIndex ${labels(curLabels)}]->"
-              val queryPart: String = s"$connector $curS"
+          case ((curQuery: List[String], curWhereId: List[String], curReturn: List[String]), ((gv, curLabels), curIndex)) =>
+            val (curS, maybeCurId) = renderVertex(s, s"a$curIndex", gv)
+            val connector = s"-[e$curIndex ${labels(curLabels)}]->"
+            val queryPart: String = s"$connector $curS"
 
-              val returnPart = s"a$curIndex, ID(a$curIndex) AS a${curIndex}Id, ID(e$curIndex) AS e${curIndex}Id"
+            val returnPart = s"a$curIndex, ID(a$curIndex) AS a${curIndex}Id, ID(e$curIndex) AS e${curIndex}Id"
 
-              (queryPart +: curQuery, maybeCurId.map(_ +: curWhereId).getOrElse(curWhereId), returnPart +: curReturn)
-          }
+            (queryPart +: curQuery, maybeCurId.map(_ +: curWhereId).getOrElse(curWhereId), returnPart +: curReturn)
+        }
 
 
       val queryP = (firstQuery +: otherQuery).mkString
@@ -133,7 +134,9 @@ object DslCompiler {
         else if (result.size() == 1) {
           fn(result.iterator.next(), s)
         } else
-          fail(DslError(s"Query $fullQuery returned more than one result. Impossibru!", s))
+          fail(DslError(s"Query $fullQuery returned more than one result. " +
+            s"Results:\n${result.asScala.map(r => PrettyPrint.prettyPrint(new WrappedRecord(r))(InternalTypeSystem.TYPE_SYSTEM))
+              .mkString("\n")}", s))
       } catch {
         case e: Exception => fail(DslError(s"Query $fullQuery produced exception:\n$e", s))
       }
@@ -161,7 +164,10 @@ object DslCompiler {
         val curVertex = result.get(s"a$vertexIndex")
         val uid = UUID.fromString(curVertex.get("uid").asString())
         // Todo: Extract labels and attributes
-        (MatchedVertex(vertexId, uid, Set.empty, Map.empty), vertexId)
+
+        val readAttributes: Map[String, N4jValue] = curVertex.asMap(N4jValue.toN4jType).asScala.toMap
+
+        (MatchedVertex(vertexId, uid, Set.empty, readAttributes), vertexId)
       }.toList
 
       // Have to do edges separately since we have (vertex-1) edges

@@ -2,8 +2,13 @@ package mwittmann.checkgraph.graphvalidator
 
 import java.util.UUID
 import scala.collection.JavaConverters._
+import scala.util.Try
+
+import org.neo4j.driver.internal.types.InternalTypeSystem
+import org.neo4j.driver.v1.Value
 
 sealed trait N4jType
+case object N4jNull extends N4jType with N4jValue { val `type`: N4jType = N4jNull }
 case object N4jInt extends N4jType
 case object N4jDouble extends N4jType
 case object N4jString extends N4jType
@@ -20,6 +25,31 @@ case class N4jUid(v: UUID)                extends N4jValue { val `type`: N4jType
 case class N4jBoolean(v: Boolean)         extends N4jValue { val `type`: N4jType = N4jBoolean }
 case class N4jLong(v: Long)               extends N4jValue { val `type`: N4jType = N4jLong }
 case class N4jStringList(v: List[String]) extends N4jValue { val `type`: N4jType = N4jString }
+
+object N4jValue {
+  val ts: InternalTypeSystem = InternalTypeSystem.TYPE_SYSTEM
+
+  def toN4jType(value: Value): N4jValue = {
+    if (value.`type`() == ts.INTEGER()) {
+      N4jLong(value.asLong())
+    } else if (value.`type`() == ts.FLOAT()) {
+      N4jDouble(value.asFloat())
+    } else if (value.`type`() == ts.BOOLEAN()) {
+      N4jBoolean(value.asBoolean())
+    } else if (value.`type`() == ts.NULL()) {
+      N4jNull
+    } else if (value.`type`() == ts.STRING()) {
+      N4jString(value.asString())
+    } else if (value.`type`() == ts.LIST()) {
+      val list: List[Value] = value.asList[Value](v => v).asScala.toList
+      assert(list.forall(_.`type`() == ts.STRING()))
+      N4jStringList(list.map(_.asString()))
+    } else {
+      throw new Exception(s"Unhandled type '${value.`type`().name()}' with value '${value.asObject()}'")
+    }
+  }
+
+}
 
 object N4jValueRender {
   def renderInCypher(attr: N4jValue): String = attr match {
@@ -44,6 +74,10 @@ object N4jValueRender {
 }
 
 object N4jValueImplicits {
+  implicit class ForN4jString(str: N4jString) {
+    def toUid: Option[N4jUid] = Try(N4jUid(UUID.fromString(str.v))).toOption
+  }
+
   implicit class ForInt(i: Int) {
     def toN4j: N4jInt = N4jInt(i)
   }

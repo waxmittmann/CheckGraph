@@ -1,7 +1,5 @@
 package mwittmann.checkgraph.graphvalidator
 
-import mwittmann.checkgraph.graphvalidator.DslCommands._
-import mwittmann.checkgraph.utils.WrappedNeo4jDriver
 import org.neo4j.driver.v1._
 import cats.data._
 import cats.free.Free
@@ -10,15 +8,21 @@ import cats.implicits._
 import cats.~>
 import scala.collection.JavaConverters._
 
+import mwittmann.checkgraph.graphvalidator.DslCommands._
+import mwittmann.checkgraph.utils.WrappedNeo4jDriver
 import mwittmann.checkgraph.graphvalidator.DslCompiler.DslCompilerConfig
 
 object CheckGraph {
 
   type CheckProgram[S] = Free[DslCommand, S]
 
-  type ProgramResult[S] = Either[Throwable, ErrorOr[(DslStateData, S)]]
+  sealed trait ProgramResult[S] { val success: Boolean }
+  sealed trait ProgramError[S] extends ProgramResult[S] { val success: Boolean = false }
+  case class UnexpectedError[S](throwable: Throwable) extends ProgramError[S]
+  case class CheckError[S](dslError: DslError) extends ProgramError[S]
+  case class ProgramSuccess[S](s: S, state: DslStateData) extends ProgramResult[S] { val success: Boolean = true }
 
-  def check[S](
+  def run[S](
     graphLabel: String,
     program: CheckProgram[S]
   ): ProgramResult[S] = {
@@ -33,14 +37,38 @@ object CheckGraph {
 
       val result: ErrorOr[(DslStateData, S)] = compiledProgram.run(DslStateData())
 
-      val checkedResult =
+      val checkedResult: Either[DslError, (DslStateData, S)] =
         result.flatMap { case (state, v) => checkResultState(driver, graphLabel, state).right.map(_ => (state, v)) }
 
-      Right(checkedResult) : ProgramResult[S]
+      checkedResult match {
+        case Left(value) => CheckError(value)
+        case Right((state, s)) => ProgramSuccess(s, state)
+      }
     } catch {
-      case t: Exception => Left(t)
+      case t: Throwable => UnexpectedError(t)
     } finally {
       driver.close()
+    }
+  }
+
+  def runAndGetValue[S](
+    graphLabel: String,
+    program: CheckProgram[S]
+  ): Either[String, (DslStateData, S)] =
+    getValue(run(graphLabel, program))
+
+  def getValue[S](result: ProgramResult[S]): Either[String, (DslStateData, S)] = {
+    result match {
+      case CheckError(dslError)     => Left(s"Expected success, got DslError:\n$dslError")
+      case UnexpectedError(t)       => Left(s"Expected success, got exception:\n$t")
+      case ProgramSuccess(s, state) => Right((state, s))
+    }
+  }
+
+  def unsafeGetValue[S](result: ProgramResult[S]): (DslStateData, S) = {
+    getValue(result) match {
+      case Left(value)  => throw new Exception(value)
+      case Right(value) => value
     }
   }
 

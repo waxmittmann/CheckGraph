@@ -114,6 +114,7 @@ object CheckGraph {
     driver.tx(q).single().get("ids").asList(v => v.asLong()).asScala.toSet
   }
 
+  // Todo: This should be set up via config
   private def wrappedDriver(): WrappedNeo4jDriver = {
     val token: AuthToken = AuthTokens.basic("neo4j", "test")
 

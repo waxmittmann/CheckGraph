@@ -27,13 +27,10 @@ object DslCompiler {
   def compiler(config: DslCompilerConfig): DslCommand ~> DslState = new (DslCommand ~> DslState) {
     val helpers = new Neo4jHelpers(config)
     override def apply[A](fa: DslCommand[A]): DslState[A] = fa match {
-      case MatchVertex(labels, attributes)  => helpers.matchVertex(labels, attributes).map(_.asInstanceOf[A]) // Eww...
-
-      case MatchPath(first, rest)           => helpers.matchPath(first, rest).map(_.asInstanceOf[A]) // Eww...
-
-      case UseMatchedVertex(vertex)         => value(vertex.asInstanceOf[A]) // Eww...
-
-      case Noop                             => value(().asInstanceOf[A]) // Eww...
+      case MatchVertex(labels, attributes)  => helpers.matchVertex(labels, attributes)
+      case MatchPath(first, rest)           => helpers.matchPath(first, rest)
+      case UseMatchedVertex(vertex)         => AllDsl.value(vertex)
+      case Noop                             => AllDsl.value(())
     }
   }
 

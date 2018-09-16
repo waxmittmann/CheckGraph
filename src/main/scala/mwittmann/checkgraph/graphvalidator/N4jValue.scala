@@ -53,6 +53,7 @@ object N4jValue {
 
 object N4jValueRender {
   def renderInCypher(attr: N4jValue): String = attr match {
+    case N4jNull          => "null"
     case N4jInt(v)        => v.toString
     case N4jLong(v)       => v.toString
     case N4jDouble(v)     => v.toString
@@ -63,6 +64,7 @@ object N4jValueRender {
   }
 
   def render(attr: N4jValue): AnyRef = attr match {
+    case N4jNull          => null
     case N4jInt(v)        => v.asInstanceOf[AnyRef]
     case N4jLong(v)       => v.asInstanceOf[AnyRef]
     case N4jDouble(v)     => v.asInstanceOf[AnyRef]

@@ -3,10 +3,6 @@ package mwittmann.checkgraph.graphvalidator
 import java.util.UUID
 import scala.collection.JavaConverters._
 
-import cats.~>
-import cats.data._
-import cats.free.Free
-import cats.free.Free.liftF
 import cats.implicits._
 import cats.~>
 import org.neo4j.driver.internal.types.InternalTypeSystem

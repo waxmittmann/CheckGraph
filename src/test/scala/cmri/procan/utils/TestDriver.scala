@@ -1,7 +1,8 @@
-package utils
+package cmri.procan.utils
 
-import mwittmann.checkgraph.utils.WrappedNeo4jDriver
 import org.neo4j.driver.v1._
+
+import cmri.procan.checkgraph.utils.WrappedNeo4jDriver
 
 object TestDriver {
   private val token: AuthToken = AuthTokens.basic("neo4j", "test")

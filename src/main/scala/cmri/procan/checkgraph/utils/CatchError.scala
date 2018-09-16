@@ -1,4 +1,4 @@
-package mwittmann.checkgraph.utils
+package cmri.procan.checkgraph.utils
 
 object CatchError {
   case class WrappedClientException(ce: Exception) extends Exception(s"WrappedClientException: ${ce.getMessage}")

@@ -1,4 +1,4 @@
-package mwittmann.checkgraph.utils
+package cmri.procan.checkgraph.utils
 
 import java.util
 import scala.collection.JavaConverters._

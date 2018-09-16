@@ -1,4 +1,4 @@
-package mwittmann.checkgraph.graphvalidator
+package cmri.procan.checkgraph.graphvalidator
 
 import java.util.UUID
 import scala.util.Random
@@ -6,12 +6,11 @@ import scala.util.Random
 import cats.free.Free
 import org.specs2.mutable.Specification
 
-import mwittmann.checkgraph.graphvalidator.AllDsl._
-import mwittmann.checkgraph.graphvalidator.CheckGraph.ProgramResult
-import mwittmann.checkgraph.graphvalidator.DslCommands._
-import mwittmann.checkgraph.utils.CatchError
-
-import utils.TestDriver
+import cmri.procan.checkgraph.graphvalidator.AllDsl._
+import cmri.procan.checkgraph.graphvalidator.CheckGraph.ProgramResult
+import cmri.procan.checkgraph.graphvalidator.DslCommands._
+import cmri.procan.checkgraph.utils.CatchError
+import cmri.procan.utils.TestDriver
 
 class CheckGraphSpec extends Specification {
 

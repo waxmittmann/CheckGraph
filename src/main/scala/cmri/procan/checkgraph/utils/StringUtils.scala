@@ -1,4 +1,4 @@
-package mwittmann.checkgraph.utils
+package cmri.procan.checkgraph.utils
 
 object StringUtils {
   def indent(str: String, by: Int = 3): String =

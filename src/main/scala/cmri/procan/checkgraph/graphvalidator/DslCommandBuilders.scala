@@ -1,6 +1,7 @@
-package mwittmann.checkgraph.graphvalidator
+package cmri.procan.checkgraph.graphvalidator
 
-import mwittmann.checkgraph.graphvalidator.DslCommands._
+import cmri.procan.checkgraph.graphvalidator.DslCommands._
+import cmri.procan.checkgraph.graphvalidator.DslCommands.{GetVertex, MatchPath, MatchVertex, MatchedVertex}
 
 object DslCommandBuilders extends DslCommandBuilderMethods
 

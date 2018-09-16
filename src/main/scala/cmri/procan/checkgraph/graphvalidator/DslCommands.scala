@@ -1,4 +1,4 @@
-package mwittmann.checkgraph.graphvalidator
+package cmri.procan.checkgraph.graphvalidator
 
 import java.util.UUID
 

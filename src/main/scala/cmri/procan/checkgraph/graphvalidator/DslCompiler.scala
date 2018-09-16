@@ -1,4 +1,4 @@
-package mwittmann.checkgraph.graphvalidator
+package cmri.procan.checkgraph.graphvalidator
 
 import java.util.UUID
 import scala.collection.JavaConverters._
@@ -10,8 +10,10 @@ import org.neo4j.driver.v1.Record
 
 import DslCommands._
 import AllDsl._
-import mwittmann.checkgraph.utils.{CatchError, PrettyPrint, WrappedNeo4jClient}
-import mwittmann.checkgraph.utils.WrappedNeo4j.WrappedRecord
+import cmri.procan.checkgraph.utils.{CatchError, PrettyPrint, WrappedNeo4jClient}
+import cmri.procan.checkgraph.utils.WrappedNeo4j.WrappedRecord
+
+import cmri.procan.checkgraph.utils.{CatchError, PrettyPrint, WrappedNeo4jClient}
 
 object DslCompiler {
   case class DslCompilerConfig(

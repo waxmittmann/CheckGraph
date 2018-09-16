@@ -1,6 +1,6 @@
-package mwittmann.checkgraph.graphvalidator
+package cmri.procan.checkgraph.graphvalidator
 
-import mwittmann.checkgraph.graphvalidator.DslCommands.{EdgeLabel, GetVertex, MatchPath, MatchVertex, MatchedVertex, UseMatchedVertex}
+import cmri.procan.checkgraph.graphvalidator.DslCommands._
 
 object PartialMatchBuilders extends PartialMatchBuildersTrait
 

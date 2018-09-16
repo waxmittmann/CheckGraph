@@ -1,4 +1,4 @@
-package mwittmann.checkgraph.graphvalidator
+package cmri.procan.checkgraph.graphvalidator
 
 object AllDsl
   extends DslCommandsMethods

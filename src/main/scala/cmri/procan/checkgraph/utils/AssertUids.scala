@@ -1,4 +1,4 @@
-package mwittmann.checkgraph.utils
+package cmri.procan.checkgraph.utils
 
 import cats.effect.IO
 import org.neo4j.driver.v1.Transaction

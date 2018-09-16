@@ -1,10 +1,9 @@
 package cmri.procan.checkgraph.utils
 
-import cmri.procan.checkgraph.utils.WrappedNeo4j.{ListChildren, NoChildren, NodeChildren, WrappedNeo4j}
 import org.neo4j.driver.v1.Transaction
 import org.neo4j.driver.v1.types.TypeSystem
 
-import cmri.procan.checkgraph.utils.WrappedNeo4j.{NoChildren, WrappedNeo4j}
+import cmri.procan.checkgraph.utils.WrappedNeo4j._
 
 object PrettyPrint {
 

@@ -7,7 +7,7 @@ import cats.free.Free
 import org.specs2.mutable.Specification
 
 import cmri.procan.checkgraph.graphvalidator.AllDsl._
-import cmri.procan.checkgraph.graphvalidator.CheckGraph.ProgramResult
+import cmri.procan.checkgraph.graphvalidator.CheckGraph.{CheckProgram, ProgramResult}
 import cmri.procan.checkgraph.graphvalidator.DslCommands._
 import cmri.procan.checkgraph.utils.CatchError
 import cmri.procan.utils.TestDriver
@@ -35,7 +35,7 @@ class CheckGraphSpec extends Specification {
       driver.tx(q)
 
       // Program to test
-      val program: Free[DslCommand, (MatchedPath, MatchedPath)] =
+      val program: CheckProgram[(MatchedPath, MatchedPath)] =
         for {
 
           v1  <- vertex(Set("A"), Map("uid" -> N4jUid(aUid)))

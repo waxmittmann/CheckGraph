@@ -4,6 +4,7 @@ import cats.effect.IO
 import org.neo4j.driver.v1.Transaction
 
 object AssertUids {
+  // Assert that all vertices have uids and all uids are unique
   def check(graph: WrappedNeo4jDriver, baseVertexLabel: String): IO[Int] = for {
     _           <- setUidUniquenessConstraint(graph, baseVertexLabel)
     existsOnAll <- checkUidExistence(graph, baseVertexLabel)
@@ -20,7 +21,7 @@ object AssertUids {
   ): IO[Unit] = graph.tx { tx: Transaction => IO {
     tx.run(s"CREATE CONSTRAINT ON (lakeElem :$baseLabel) ASSERT lakeElem.uid IS UNIQUE").summary()
 
-    // Existence checks are an 'enterprise' feature; pretty disappointing :/
+    // Existence checks are an 'enterprise' feature
     //tx.run("CREATE CONSTRAINT ON (lakeElem:Lake) ASSERT exists(lakeElem.uid)").summary()
   }}
 }

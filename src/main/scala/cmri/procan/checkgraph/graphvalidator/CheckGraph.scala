@@ -24,6 +24,8 @@ object CheckGraph {
   case class CheckError[S](dslError: DslError) extends ProgramError[S]
   case class ProgramSuccess[S](s: S, state: DslStateData) extends ProgramResult[S] { val success: Boolean = true }
 
+  // Run a CheckGraph program using the provided `graphLabel` to isolate the subgraph of interest. Will error out for
+  // any failed match and for any vertex or edge that remains unmatched by the program.
   def run[S](
     graphLabel: String,
     program: CheckProgram[S]
@@ -53,12 +55,14 @@ object CheckGraph {
     }
   }
 
+  // Run CheckGraph and turn the result into an Either.
   def runAndGetValue[S](
     graphLabel: String,
     program: CheckProgram[S]
   ): Either[String, (DslStateData, S)] =
     getValue(run(graphLabel, program))
 
+  // Turn the result of executing a CheckProgram into an either
   def getValue[S](result: ProgramResult[S]): Either[String, (DslStateData, S)] = {
     result match {
       case CheckError(dslError)     => Left(s"Expected success, got DslError:\n$dslError")
@@ -67,6 +71,7 @@ object CheckGraph {
     }
   }
 
+  // Get the result of executing a CheckProgram if the program passed, else throw an exception
   def unsafeGetValue[S](result: ProgramResult[S]): (DslStateData, S) = {
     getValue(result) match {
       case Left(value)  => throw new Exception(value)

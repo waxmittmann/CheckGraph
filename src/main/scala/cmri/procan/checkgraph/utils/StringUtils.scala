@@ -5,5 +5,8 @@ object StringUtils {
     str.split("\n").map(line => s"${" ".take(by)}$line").mkString("\n")
 
   def shortenString(s: String): String =
-    if (s.toString.length > 50) s"excerpt: ${s.take(25).replace("\n", " ")} ... ${s.takeRight(25).replace("\n", " ")}" else s
+    if (s.toString.length > 50)
+      s"excerpt: ${s.take(25).replace("\n", " ")} ... " +
+        s"${s.takeRight(25).replace("\n", " ")}"
+    else s
 }

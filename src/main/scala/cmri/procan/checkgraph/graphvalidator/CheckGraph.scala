@@ -65,7 +65,7 @@ object CheckGraph {
   // Turn the result of executing a CheckProgram into an either
   def getValue[S](result: ProgramResult[S]): Either[String, (DslStateData, S)] = {
     result match {
-      case CheckError(dslError)     => Left(s"Expected success, got DslError:\n$dslError")
+      case CheckError(dslError)     => Left(s"Expected success, got DslError:\n${dslError.err}")
       case UnexpectedError(t)       => Left(s"Expected success, got exception:\n$t")
       case ProgramSuccess(s, state) => Right((state, s))
     }

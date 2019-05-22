@@ -4,6 +4,7 @@ import java.util.UUID
 import scala.util.Random
 
 import cats.free.Free
+import org.specs2.matcher.MatchResult
 import org.specs2.mutable.Specification
 
 import cmri.procan.checkgraph.graphvalidator.AllDsl._
@@ -99,6 +100,64 @@ class CheckGraphSpec extends Specification {
 
       path1.map(_.uid) mustEqual List(a1Uid, b1Uid, c1Uid)
       path2.map(_.uid) mustEqual List(a1Uid, b2Uid, c2Uid)
+    }
+
+    "detect when a vertex is not matched and produce an error" in {
+      val driver = TestDriver.wrappedDriver
+
+      // Create test data
+      val aUid = UUID.randomUUID()
+      val bUid = UUID.randomUUID()
+
+      val graphLabel = s"G_${Random.alphanumeric.take(20).mkString}"
+
+      val q =
+        s"""
+           |CREATE
+           |  (a :A :$graphLabel { uid: '${aUid.toString}' }),
+           |  (b :B :$graphLabel { uid: '${bUid.toString}' })
+           |RETURN a, b
+       """.stripMargin
+      driver.tx(q)
+
+      // Program to test; we are missing the B vertex
+      val program = vertex(Set("A"), Map("uid" -> N4jUid(aUid)))
+
+      // Run test program, check result
+      val result = CheckGraph.run(graphLabel, program)
+      CheckGraph.getValue(result) must beLeft(startWith(
+        "Expected success, got DslError:\nDid not see expected vertices with ids:"))
+    }
+
+    "detect when an edge is not matched and produce an error" in {
+      val driver = TestDriver.wrappedDriver
+
+      // Create test data
+      val aUid = UUID.randomUUID()
+      val bUid = UUID.randomUUID()
+
+      val graphLabel = s"G_${Random.alphanumeric.take(20).mkString}"
+
+      val q =
+        s"""
+           |CREATE
+           |  (a :A :$graphLabel { uid: '${aUid.toString}' }),
+           |  (b :B :$graphLabel { uid: '${bUid.toString}' }),
+           |  (a) -[:EDGE_TO]-> (b)
+           |RETURN a, b
+       """.stripMargin
+      driver.tx(q)
+
+      // Program to test; we are missing the B vertex
+      val program = for {
+        _ <- vertex(Set("A"), Map("uid" -> N4jUid(aUid)))
+        _ <- vertex(Set("B"), Map("uid" -> N4jUid(bUid)))
+      } yield ()
+
+      // Run test program, check result
+      val result = CheckGraph.run(graphLabel, program)
+      CheckGraph.getValue(result) must beLeft(startWith(
+        "Expected success, got DslError:\nDid not see expected edges with ids:"))
     }
   }
 }

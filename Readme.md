@@ -64,6 +64,11 @@ One way to achieve isolation would be to run all tests sequentially and to clear
 
 CheckGraph achieves isolation via a `graphLabel` which all nodes belonging to the graph share. CheckGraph will automatically add that label to any queries it makes, meaning that by using unique (randomly generated for optimal isolation) graph labels each test case can operate on its own unique subgraph without interference from other test cases.
 
+# Test setup
+Unfortunately the current version of Scala doesn't play nicely with embedded Neo4j and hence the tests require an
+external instance of Neo4j to run. The instance must run on localhost with its bolt port being the default `7687`; 
+its login credentials must be username `neo4j` and password `test`.
+
 # Limitations
 While CheckGraph allows matching edges with a set of labels (as with nodes), it does not currently allow the user to specify properties on edges.
 

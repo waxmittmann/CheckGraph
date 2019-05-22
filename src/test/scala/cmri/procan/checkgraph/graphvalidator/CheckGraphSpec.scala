@@ -48,7 +48,7 @@ class CheckGraphSpec extends Specification {
         } yield (a, b)
 
       // Run test program, check result
-      val result: ProgramResult[(MatchedPath, MatchedPath)] = CheckGraph.run(graphLabel, program)
+      val result: ProgramResult[(MatchedPath, MatchedPath)] = CheckGraph.run(driver, graphLabel, program)
       val resultValue = CheckGraph.unsafeGetValue(result)
       val (MatchedPath(path1), MatchedPath(path2)) = resultValue._2
 
@@ -94,7 +94,7 @@ class CheckGraphSpec extends Specification {
         } yield (p1, p2)
 
       // Run test program, check result
-      val result: ProgramResult[(MatchedPath, MatchedPath)] = CheckGraph.run(graphLabel, program)
+      val result: ProgramResult[(MatchedPath, MatchedPath)] = CheckGraph.run(driver, graphLabel, program)
       val resultValue = CheckGraph.unsafeGetValue(result)
       val (MatchedPath(path1), MatchedPath(path2)) = resultValue._2
 
@@ -124,7 +124,7 @@ class CheckGraphSpec extends Specification {
       val program = vertex(Set("A"), Map("uid" -> N4jUid(aUid)))
 
       // Run test program, check result
-      val result = CheckGraph.run(graphLabel, program)
+      val result = CheckGraph.run(driver, graphLabel, program)
       CheckGraph.getValue(result) must beLeft(startWith(
         "Expected success, got DslError:\nDid not see expected vertices with ids:"))
     }
@@ -155,7 +155,7 @@ class CheckGraphSpec extends Specification {
       } yield ()
 
       // Run test program, check result
-      val result = CheckGraph.run(graphLabel, program)
+      val result = CheckGraph.run(driver, graphLabel, program)
       CheckGraph.getValue(result) must beLeft(startWith(
         "Expected success, got DslError:\nDid not see expected edges with ids:"))
     }

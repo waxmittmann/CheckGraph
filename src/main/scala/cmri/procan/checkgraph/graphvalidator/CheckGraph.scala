@@ -27,10 +27,11 @@ object CheckGraph {
   // Run a CheckGraph program using the provided `graphLabel` to isolate the subgraph of interest. Will error out for
   // any failed match and for any vertex or edge that remains unmatched by the program.
   def run[S](
+    driver: WrappedNeo4jDriver,
     graphLabel: String,
-    program: CheckProgram[S]
+    program: CheckProgram[S],
+    closeDriver: Boolean = false
   ): ProgramResult[S] = {
-    val driver: WrappedNeo4jDriver = wrappedDriver()
     try {
 
       val compiledProgram: DslState[S] = program.foldMap(DslCompiler.compiler(DslCompilerConfig(
@@ -51,16 +52,25 @@ object CheckGraph {
     } catch {
       case t: Throwable => UnexpectedError(t)
     } finally {
-      driver.close()
+      if (closeDriver) driver.close()
     }
   }
 
+  def run[S](
+    javaDriver: Driver,
+    graphLabel: String,
+    program: CheckProgram[S],
+    closeDriver: Boolean
+  ): ProgramResult[S] = run(new WrappedNeo4jDriver(javaDriver), graphLabel, program, closeDriver)
+
   // Run CheckGraph and turn the result into an Either.
   def runAndGetValue[S](
+    driver: Driver,
     graphLabel: String,
-    program: CheckProgram[S]
+    program: CheckProgram[S],
+    closeDriver: Boolean = false
   ): Either[String, (DslStateData, S)] =
-    getValue(run(graphLabel, program))
+    getValue(run(driver, graphLabel, program, closeDriver))
 
   // Turn the result of executing a CheckProgram into an either
   def getValue[S](result: ProgramResult[S]): Either[String, (DslStateData, S)] = {
@@ -117,20 +127,5 @@ object CheckGraph {
        """.stripMargin
 
     driver.tx(q).single().get("ids").asList(v => v.asLong()).asScala.toSet
-  }
-
-  // Todo: This should be set up via config
-  private def wrappedDriver(): WrappedNeo4jDriver = {
-    val token: AuthToken = AuthTokens.basic("neo4j", "test")
-
-    val driver: Driver = GraphDatabase.driver(
-      "bolt://127.0.0.1:7687",
-      token,
-      Config.build
-        .withEncryptionLevel(Config.EncryptionLevel.NONE)
-        .toConfig
-    )
-
-    new WrappedNeo4jDriver(driver)
   }
 }

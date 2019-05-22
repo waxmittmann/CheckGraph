@@ -75,7 +75,6 @@ object WrappedNeo4j {
     def getUid(key: String): java.util.UUID
   }
 
-  // Todo: Create separate Wrappers for lists and so on?
   class WrappedValue(value: Value) extends WrappedNeo4j {
     case object MyOptionals extends Optionals {
       def getString(key: String): Option[String] = if (outer.containsKey(key)) Some(outer.getString(key)) else None
